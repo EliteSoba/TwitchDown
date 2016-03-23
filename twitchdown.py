@@ -58,10 +58,7 @@ def main(argv):
 		else:
 			map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
 	
-	for i in sorted(map):
-		print i, map[i]
-
-	return
+	
 	downloader = urllib.URLopener()
 	
 	if not os.path.exists(video):

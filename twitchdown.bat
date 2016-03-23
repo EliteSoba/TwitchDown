@@ -1,16 +1,14 @@
 @ECHO OFF
+set id=%1
 IF [%1]==[] (
-ECHO Invalid Command Line Arugment
-ECHO Example: twitchdown.bat 55921134
-GOTO :end
+set /p id=Enter Twitch Video ID: 
 )
 
-twitchdown.py %1
+twitchdown.py %id%
 
-IF EXIST %1 (
-cd %1
-copy /b *.ts %1.ts
-mv %1.ts ../%1.ts
+IF EXIST %id% (
+cd %id%
+copy /b *.ts %id%.ts
+mv %id%.ts ../%id%.ts
 cd ..
 )
-:end
