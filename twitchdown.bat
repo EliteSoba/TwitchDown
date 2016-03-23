@@ -3,8 +3,10 @@ set id=%1
 IF [%1]==[] (
 set /p id=Enter Twitch Video ID: 
 )
+set start=%2
+set end=%3
 
-twitchdown.py %id%
+twitchdown.py %id% %start% %end%
 
 IF EXIST %id% (
 cd %id%
