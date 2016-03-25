@@ -1,9 +1,6 @@
 ﻿import urllib2
-import urllib
 import json
 import sys
-import os
-import subprocess
 
 #Created by: @Elite_Soba
 #Usage: twitchdown.py VIDEOID
@@ -53,6 +50,7 @@ def main(argv):
 	y = json.loads(x)
 	prev = y["preview"]
 	index = prev[prev.find("v1/AUTH_system"):prev.find("thumb")]
+	#Inelegant way to do this, but eh whatever.
 	header1 = "http://vod.edgecast.hls.ttvnw.net/"
 	header2 = "http://vod.ak.hls.ttvnw.net/"
 	footer1 = "chunked/highlight-" + video + ".m3u8"
