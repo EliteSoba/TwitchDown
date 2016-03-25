@@ -25,11 +25,11 @@ def hmsToSec(hms):
 	return total
 
 def main(argv):
+	video = ""
 	if len(argv) == 0:
-		print "Error: Please input a video id"
-		print "ex: \"twitchdown.py 55921134\""
-		return
-	video = argv[0]
+		video = raw_input("Enter Twitch Video ID: ")
+	else:
+		video = argv[0]
 	
 	start = False
 	end = False
@@ -78,7 +78,7 @@ def main(argv):
 		if "#EXTINF" in part:
 			time = time + float(part[8:-1])
 		if len(part) != 0 and part[0] != "#":
-			if start and end:
+			if start or end:
 				#Get only parts of video between start and end
 				if time >= start and time <= end:
 					segments.append(part)
@@ -95,20 +95,19 @@ def main(argv):
 		else:
 			map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
 	
-	downloader = urllib.URLopener()
-	
-	if not os.path.exists(video):
-		os.mkdir(video)
-	
-	print "Downloading " + str(len(map)) + " parts to folder: " + video + ". This could take a while."
+	vid = open(video+".ts", "wb")
+	print "Downloading " + str(len(map)) + " parts. This could take a while."
 	progress = 0
-	for ts, time in map.items():
-		downloader.retrieve(header + index + "chunked/" + ts + "?" + time[0] + time[1], video + "/" + ts)
+	for ts in sorted(map):
+		time = map[ts]
+		part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
+		vid.write(part)
 		progress = progress + 1
 		if progress % 10 == 0:
 			print "Downloaded " + str(progress) + " parts out of " + str(len(map))
 	
-	print "Download succeeded. Now merging files"
+	print "Download succeeded"
+	vid.close()
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
