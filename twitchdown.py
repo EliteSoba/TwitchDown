@@ -1,6 +1,7 @@
 ﻿import urllib2
 import json
 import sys
+import subprocess
 
 #Created by: @Elite_Soba
 #Usage: twitchdown.py VIDEOID
@@ -106,6 +107,10 @@ def main(argv):
 	
 	print "Download succeeded"
 	vid.close()
+	response = raw_input("Would you like to convert to mp4 (Y/N)? ")
+	if response.lower()[0] == "y":
+		subprocess.call(["ffmpeg/ffmpeg.exe","-i",video+".ts","-acodec","copy","-vcodec","copy","-bsf:a","aac_adtstoasc",video+".mp4"])
+	
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
