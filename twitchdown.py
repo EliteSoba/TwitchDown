@@ -1,6 +1,7 @@
 ﻿import urllib2
 import json
 import sys
+import os
 
 #Created by: @Elite_Soba
 #Usage: twitchdown.py VIDEOID
@@ -93,7 +94,13 @@ def main(argv):
 		else:
 			map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
 	
-	vid = open(video+".ts", "wb")
+	filename = video + ".ts"
+	i = 1
+	while os.path.exists(filename) and os.path.isfile(filename):
+		filename = video + "-" + str(i) + ".ts"
+		i = i + 1
+	vid = open(filename, "wb")
+	
 	print "Downloading " + str(len(map)) + " parts. This could take a while."
 	progress = 0
 	for ts in sorted(map):
