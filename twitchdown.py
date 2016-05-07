@@ -51,6 +51,10 @@ def main(argv):
 	y = json.loads(x)
 	prev = y["preview"]
 	index = prev[prev.find("v1/AUTH_system"):prev.find("thumb")]
+	if len(index) < 2:
+		#New API system
+		index = prev[prev.find("/s3_vods")+9:prev.find("thumb")]
+	
 	#Inelegant way to do this, but eh whatever.
 	header1 = "http://vod.edgecast.hls.ttvnw.net/"
 	header2 = "http://vod.ak.hls.ttvnw.net/"
@@ -60,11 +64,13 @@ def main(argv):
 	header = ""
 	footer = ""
 	playlist = ""
+	success = False
 	for combination in combinations:
 		header, footer = combination
 		playlist_url = header + index + footer
 		try:
 			playlist = urllib2.urlopen(playlist_url)
+			success = True
 			break
 		except:
 			pass
@@ -88,11 +94,15 @@ def main(argv):
 	map = {}
 
 	for segment in segments:
-		key = segment[0:segment.find("?")]
-		if key in map:
-			map[key] = (map[key][0], segment[segment.find("end_offset="):])
+		if "?" in segment:
+			key = segment[0:segment.find("?")]
+			if key in map:
+				map[key] = (map[key][0], segment[segment.find("end_offset="):])
+			else:
+				map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
 		else:
-			map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
+			#Different format not using offsets
+			map[segment] = segment
 	
 	filename = video + ".ts"
 	i = 1
@@ -105,8 +115,13 @@ def main(argv):
 	progress = 0
 	for ts in sorted(map):
 		time = map[ts]
-		part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
-		vid.write(part)
+		try:
+			part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
+			vid.write(part)
+		except:
+			#If the part is muted instead
+			part = urllib2.urlopen(header + index + "chunked/" + ts[:ts.find(".ts")] + "-muted.ts?" + time[0] + time[1]).read()
+			vid.write(part)
 		progress = progress + 1
 		if progress % 10 == 0:
 			print "Downloaded " + str(progress) + " parts out of " + str(len(map))
