@@ -65,8 +65,23 @@ def main(argv):
 		return
 	parser = getDataParser()
 	parser.feed(x)
-	header = parser.vidSource[:parser.vidSource.find("index")]
-	footer = "2000kbps.m3u8"
+	header = parser.vidSource[:parser.vidSource.find("index")].replace("https", "http")
+	print parser.vidSource.replace("https", "http")
+	try:
+		x = urllib2.urlopen(parser.vidSource.replace("https", "http")).read()
+	except:
+		print "Error getting video. Please let me know which video it was"
+		return
+	qualities = {}
+	for line in x.split("\n"):
+		if line and line[0] != "#":
+			quality = line[line.find("_")+1:line.find(".m3u8")]
+			q = int(''.join([x for x in quality if x.isdigit()]))
+			qualities[q] = line
+	
+	print "Quality options are: " + str(", ".join([str(x) for x in sorted(qualities)]))
+	print "Choosing quality option: " + str(sorted(qualities)[-1]) + " kbps"
+	footer = qualities[sorted(qualities)[-1]]#"2000kbps.m3u8"
 	playlist = ""
 	print header + footer
 	try:
