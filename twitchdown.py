@@ -48,12 +48,14 @@ def main(argv):
 	except:
 		print "Error getting video. Please confirm video ID"
 		return
+	s3 = False
 	y = json.loads(x)
 	prev = y["preview"]
 	index = prev[prev.find("v1/AUTH_system"):prev.find("thumb")]
 	if len(index) < 2:
 		#New API system
 		index = prev[prev.find("/s3_vods")+9:prev.find("thumb")]
+		s3 = True
 	
 	#Inelegant way to do this, but eh whatever.
 	header1 = "http://vod.edgecast.hls.ttvnw.net/"
@@ -94,7 +96,7 @@ def main(argv):
 	map = {}
 
 	for segment in segments:
-		if "?" in segment:
+		if not s3:
 			key = segment[0:segment.find("?")]
 			if key in map:
 				map[key] = (map[key][0], segment[segment.find("end_offset="):])
@@ -102,7 +104,8 @@ def main(argv):
 				map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
 		else:
 			#Different format not using offsets
-			map[segment] = segment
+			s = segment.split(".")[0].split("-")
+			map[(int(s[1]), int(s[3]))] = segment
 	
 	filename = video + ".ts"
 	i = 1
@@ -115,13 +118,17 @@ def main(argv):
 	progress = 0
 	for ts in sorted(map):
 		time = map[ts]
-		try:
-			part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
+		if s3:
+			part = urllib2.urlopen(header + index + "chunked/" + time).read()
 			vid.write(part)
-		except:
-			#If the part is muted instead
-			part = urllib2.urlopen(header + index + "chunked/" + ts[:ts.find(".ts")] + "-muted.ts?" + time[0] + time[1]).read()
-			vid.write(part)
+		else:
+			try:
+				part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
+				vid.write(part)
+			except:
+				#If the part is muted instead
+				part = urllib2.urlopen(header + index + "chunked/" + ts[:ts.find(".ts")] + "-muted.ts?" + time[0] + time[1]).read()
+				vid.write(part)
 		progress = progress + 1
 		if progress % 10 == 0:
 			print "Downloaded " + str(progress) + " parts out of " + str(len(map))
