@@ -76,7 +76,7 @@ def main(argv):
 			break
 		except:
 			pass
-	
+	#print "Playlist was: " + playlist_url
 	list = playlist.read()
 	parts = list.split("\n")
 	segments = []
@@ -97,11 +97,17 @@ def main(argv):
 
 	for segment in segments:
 		if not s3:
+			#They changed how offsets work so I can't group everything together now
+			s = segment.split(".")[0].split("-")[1]
+			#BECAUSE WHY NOT WHO NEEDS DECENT SUBSTRINGING LET'S JUST SPLIT BY FUN DELIMITERS
+			start = segment.split(".")[1].split("&")[0].split("=")[1]
+			map[(int(s), int(start))] = segment
+			"""
 			key = segment[0:segment.find("?")]
 			if key in map:
 				map[key] = (map[key][0], segment[segment.find("end_offset="):])
 			else:
-				map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])
+				map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])"""
 		else:
 			#Different format not using offsets
 			s = segment.split(".")[0].split("-")
@@ -115,6 +121,7 @@ def main(argv):
 	vid = open(filename, "wb")
 	
 	print "Downloading " + str(len(map)) + " parts. This could take a while."
+	#print "URL is: " + header + index
 	progress = 0
 	for ts in sorted(map):
 		time = map[ts]
@@ -123,11 +130,15 @@ def main(argv):
 			vid.write(part)
 		else:
 			try:
-				part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
+				#print header + index + "chunked/" + ts + "?" + time[0] + time[1]
+				#part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
+				part = urllib2.urlopen(header + index + "chunked/" + time).read()
 				vid.write(part)
 			except:
 				#If the part is muted instead
-				part = urllib2.urlopen(header + index + "chunked/" + ts[:ts.find(".ts")] + "-muted.ts?" + time[0] + time[1]).read()
+				#part = urllib2.urlopen(header + index + "chunked/" + ts[:ts.find(".ts")] + "-muted.ts?" + time[0] + time[1]).read()
+				time.replace(".ts", "-muted.ts")
+				part = urllib2.urlopen(header + index + "chunked/" + time).read()
 				vid.write(part)
 		progress = progress + 1
 		if progress % 10 == 0:
