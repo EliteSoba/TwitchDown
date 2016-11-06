@@ -65,7 +65,8 @@ def main(argv):
 		return
 	parser = getDataParser()
 	parser.feed(x)
-	header = parser.vidSource[:parser.vidSource.find("index")].replace("https", "http")
+	url = "/".join(parser.vidSource.split("/")[:-1]) + "/"
+	header = url.replace("https", "http")
 	print parser.vidSource.replace("https", "http")
 	try:
 		x = urllib2.urlopen(parser.vidSource.replace("https", "http")).read()
@@ -76,7 +77,10 @@ def main(argv):
 	for line in x.split("\n"):
 		if line and line[0] != "#":
 			quality = line[line.find("_")+1:line.find(".m3u8")]
-			q = int(''.join([x for x in quality if x.isdigit()]))
+			if 'source' in quality:
+				q = 'source'
+			else:
+				q = int(''.join([x for x in quality if x.isdigit()]))
 			qualities[q] = line
 	
 	print "Quality options are: " + str(", ".join([str(x) for x in sorted(qualities)]))
@@ -112,6 +116,8 @@ def main(argv):
 		filename = video + "-" + str(i) + ".ts"
 		i = i + 1
 	vid = open(filename, "wb")
+	
+	header = "/".join((header + footer).split("/")[:-1]) + "/"
 	
 	print "Downloading " + str(len(segments)) + " parts. This could take a while."
 	progress = 0
