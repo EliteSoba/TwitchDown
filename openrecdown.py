@@ -37,6 +37,18 @@ class getDataParser(HTMLParser):
 				if "data-file" in attributes:
 					self.vidSource = attributes["data-file"]
 
+def cutBandwidth(info):
+	if not "BANDWIDTH" in info:
+		return 0
+	bw = info[info.find("BANDWIDTH=")+10:]
+	bw = bw[:bw.find(",")]
+	out = 0
+	try:
+		out = int(bw)
+	except:
+		print "Error getting bandwidth"
+	return out
+	
 def main(argv):
 	video = ""
 	if len(argv) == 0:
@@ -74,17 +86,17 @@ def main(argv):
 		print "Error getting video. Please let me know which video it was"
 		return
 	qualities = {}
-	for line in x.split("\n"):
-		if line and line[0] != "#":
-			quality = line[line.find("_")+1:line.find(".m3u8")]
-			if 'source' in quality:
-				q = 'source'
-			else:
-				q = int(''.join([x for x in quality if x.isdigit()]))
-			qualities[q] = line
+	lines = x.split("\n")
+	for i in range(len(lines)-1):
+		line = lines[i]
+		if line and line[0] == "#":
+			if "EXT-X-STREAM-INF" in line:
+				bw = cutBandwidth(line)
+				playlist = lines[i+1]
+				qualities[bw] = playlist
 	
-	print "Quality options are: " + str(", ".join([str(x) for x in sorted(qualities)]))
-	print "Choosing quality option: " + str(sorted(qualities)[-1]) + " kbps"
+	print "Bandwidth options are: " + str(", ".join([str(x) for x in sorted(qualities)]))
+	print "Choosing Bandwidth option: " + str(sorted(qualities)[-1])
 	footer = qualities[sorted(qualities)[-1]]#"2000kbps.m3u8"
 	playlist = ""
 	print header + footer
