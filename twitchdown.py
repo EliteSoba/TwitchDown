@@ -44,7 +44,7 @@ def main(argv):
 			end = hmsToSec(end)
 
 	try:
-		x = urllib2.urlopen("https://api.twitch.tv/kraken/videos/v" + video).read()
+		x = urllib2.urlopen("https://api.twitch.tv/kraken/videos/v" + video + "?client_id=m06v9av9a7jxxg1idb7djw8befigrkq").read()
 	except:
 		print "Error getting video. Please confirm video ID"
 		return
