@@ -52,10 +52,12 @@ def main(argv):
 	y = json.loads(x)
 	prev = y["preview"]
 	index = prev[prev.find("v1/AUTH_system"):prev.find("thumb")]
+	
+	#At this point, everything seems to have switched to the s3 system
+	#However, the two naming conventions still seem to be present
 	if len(index) < 2:
 		#New API system
 		index = prev[prev.find("/s3_vods")+9:prev.find("thumb")]
-		s3 = True
 	
 	#Inelegant way to do this, but eh whatever.
 	header1 = "http://vod.edgecast.hls.ttvnw.net/"
@@ -92,26 +94,6 @@ def main(argv):
 			else:
 				#Get whole video
 				segments.append(part)
-
-	map = {}
-
-	for segment in segments:
-		if not s3:
-			#They changed how offsets work so I can't group everything together now
-			s = segment.split(".")[0].split("-")[1]
-			#BECAUSE WHY NOT WHO NEEDS DECENT SUBSTRINGING LET'S JUST SPLIT BY FUN DELIMITERS
-			start = segment.split(".")[1].split("&")[0].split("=")[1]
-			map[(int(s), int(start))] = segment
-			"""
-			key = segment[0:segment.find("?")]
-			if key in map:
-				map[key] = (map[key][0], segment[segment.find("end_offset="):])
-			else:
-				map[key] = (segment[segment.find("start_offset="):segment.find("end_offset=")], segment[segment.find("end_offset="):])"""
-		else:
-			#Different format not using offsets
-			s = segment.split(".")[0].split("-")
-			map[(int(s[1]), int(s[3]))] = segment
 	
 	filename = video + ".ts"
 	i = 1
@@ -120,29 +102,16 @@ def main(argv):
 		i = i + 1
 	vid = open(filename, "wb")
 	
-	print "Downloading " + str(len(map)) + " parts. This could take a while."
+	print "Downloading " + str(len(segments)) + " parts. This could take a while."
 	#print "URL is: " + header + index
 	progress = 0
-	for ts in sorted(map):
-		time = map[ts]
-		if s3:
-			part = urllib2.urlopen(header + index + "chunked/" + time).read()
-			vid.write(part)
-		else:
-			try:
-				#print header + index + "chunked/" + ts + "?" + time[0] + time[1]
-				#part = urllib2.urlopen(header + index + "chunked/" + ts + "?" + time[0] + time[1]).read()
-				part = urllib2.urlopen(header + index + "chunked/" + time).read()
-				vid.write(part)
-			except:
-				#If the part is muted instead
-				#part = urllib2.urlopen(header + index + "chunked/" + ts[:ts.find(".ts")] + "-muted.ts?" + time[0] + time[1]).read()
-				time.replace(".ts", "-muted.ts")
-				part = urllib2.urlopen(header + index + "chunked/" + time).read()
-				vid.write(part)
+	for segment in segments:
+		part = urllib2.urlopen(header + index + "chunked/" + segment).read()
+		vid.write(part)
+		
 		progress = progress + 1
 		if progress % 10 == 0:
-			print "Downloaded " + str(progress) + " parts out of " + str(len(map))
+			print "Downloaded " + str(progress) + " parts out of " + str(len(segments))
 	
 	print "Download succeeded"
 	vid.close()
