@@ -43,8 +43,9 @@ def main(argv):
 			start = hmsToSec(start)
 			end = hmsToSec(end)
 
+	apiurl = "https://api.twitch.tv/kraken/videos/v" + video + "?client_id=m06v9av9a7jxxg1idb7djw8befigrkq";
 	try:
-		x = urllib2.urlopen("https://api.twitch.tv/kraken/videos/v" + video + "?client_id=m06v9av9a7jxxg1idb7djw8befigrkq").read()
+		x = urllib2.urlopen(apiurl).read()
 	except:
 		print "Error getting video. Please confirm video ID"
 		return
@@ -64,7 +65,10 @@ def main(argv):
 	header2 = "http://vod.ak.hls.ttvnw.net/"
 	footer1 = "chunked/highlight-" + video + ".m3u8"
 	footer2 = "chunked/index-dvr.m3u8"
-	combinations = [(header1, footer1), (header2, footer1), (header1, footer2), (header2, footer2)]
+	footer3 = "720p60/index-dvr.m3u8"
+	headers = [header1, header2]
+	footers = [footer1, footer2, footer3]
+	combinations = [(h, f) for h in headers for f in footers]
 	header = ""
 	footer = ""
 	playlist = ""
@@ -78,7 +82,12 @@ def main(argv):
 			break
 		except:
 			pass
-	#print "Playlist was: " + playlist_url
+	if not success:
+		print "Error: Couldn't find the playlist."
+		print "API URL was:", apiurl
+		print "index was:", index
+		return
+	print "Playlist was: " + playlist_url
 	list = playlist.read()
 	parts = list.split("\n")
 	segments = []
@@ -104,9 +113,11 @@ def main(argv):
 	
 	print "Downloading " + str(len(segments)) + " parts. This could take a while."
 	#print "URL is: " + header + index
+	footer_part = footer.split("/")[0] + "/"
 	progress = 0
 	for segment in segments:
-		part = urllib2.urlopen(header + index + "chunked/" + segment).read()
+		url = header + index + footer_part + segment
+		part = urllib2.urlopen(url).read()
 		vid.write(part)
 		
 		progress = progress + 1
